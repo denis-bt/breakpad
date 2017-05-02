@@ -153,8 +153,6 @@ SymbolSupplier::SymbolResult SimpleSymbolSupplier::GetSymbolFileAtPathFromRoot(
   // Start with the base path.
   string path = root_path;
 
-  // Append the debug (pdb) file name as a directory name.
-  path.append("/");
   string debug_file_name = PathnameStripper::File(module->debug_file());
   if (debug_file_name.empty()) {
     BPLOG(ERROR) << "Can't construct symbol file path without debug_file "
@@ -162,8 +160,11 @@ SymbolSupplier::SymbolResult SimpleSymbolSupplier::GetSymbolFileAtPathFromRoot(
                     PathnameStripper::File(module->code_file()) << ")";
     return NOT_FOUND;
   }
+#if USE_DEBUG_FILE_NAME
+  // Append the debug (pdb) file name as a directory name.
+  path.append("/");
   path.append(debug_file_name);
-
+#endif
   // Append the identifier as a directory name.
   path.append("/");
   string identifier = module->debug_identifier();
@@ -180,6 +181,7 @@ SymbolSupplier::SymbolResult SimpleSymbolSupplier::GetSymbolFileAtPathFromRoot(
   // name ends in .pdb, strip the .pdb.  Otherwise, add .sym to the non-.pdb
   // name.
   path.append("/");
+#if USE_DEBUG_FILE_NAME
   string debug_file_extension;
   if (debug_file_name.size() > 4)
     debug_file_extension = debug_file_name.substr(debug_file_name.size() - 4);
@@ -191,6 +193,9 @@ SymbolSupplier::SymbolResult SimpleSymbolSupplier::GetSymbolFileAtPathFromRoot(
     path.append(debug_file_name);
   }
   path.append(".sym");
+#else
+  path.append("symbols.sym");
+#endif
 
   if (!file_exists(path)) {
     BPLOG(INFO) << "No symbol file at " << path;
